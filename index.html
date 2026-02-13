@@ -1,0 +1,226 @@
+<!-- =========================
+     /index.html
+     ========================= -->
+     <!DOCTYPE html>
+     <html lang="en">
+     <head>
+       <meta charset="utf-8"/>
+       <meta content="width=device-width, initial-scale=1" name="viewport"/>
+       <title>Got Rhythm</title>
+       <link href="style.css" rel="stylesheet"/>
+     </head>
+      
+     <body>
+       <div class="app">
+         <header class="hero">
+           <h1 class="app-title">Got Rhythm?</h1>
+           <p class="app-subtitle">
+             The game plays a rhythm, then you repeat it using <strong>Kick</strong> (⬅️) and <strong>Snare</strong> (➡️).<br/>
+             Change time signature, rhythm complexity, bar length, tempo and toggle rest measures in Game Settings.
+           </p>
+         </header>
+     
+         <section aria-label="game controls" class="controlsPanel controlsPanelActions">
+           <div class="actionsRow actionsCentered wrapTight">
+             <button class="primary pulse" id="beginBtn" type="button">Begin Game</button>
+             <button disabled="" id="pauseBtn" type="button">Pause</button>
+             <button disabled="" id="stopBtn" type="button">Stop / Reset</button>
+     
+             <button id="rhythmSettingsBtn" type="button">Game Settings</button>
+             <button id="downloadScoreBtn" type="button">Download Scorecard</button>
+             <button id="infoBtn" type="button">Information</button>
+           </div>
+         </section>
+     
+         <section aria-label="status" class="statusPanel">
+           <div class="statusRow">
+             <div aria-label="beat indicator" class="beatLights">
+               <!-- Up to 8 dots (2 bars of 4/4). JS will hide/show as needed. -->
+               <div class="beatDot" id="beatDot1"></div>
+               <div class="beatDot" id="beatDot2"></div>
+               <div class="beatDot" id="beatDot3"></div>
+               <div class="beatDot" id="beatDot4"></div>
+               <div class="beatDot" id="beatDot5"></div>
+               <div class="beatDot" id="beatDot6"></div>
+               <div class="beatDot" id="beatDot7"></div>
+               <div class="beatDot" id="beatDot8"></div>
+             </div>
+     
+             <div class="statusText">
+               <div class="phaseTitle" id="phaseTitle">Ready</div>
+               <div class="phaseSub" id="phaseSub">Press <strong>Begin Game</strong> to start.</div>
+             </div>
+           </div>
+     
+           <div class="scoreInline">
+             <div class="scorePill">
+               <span class="scoreLabel">Average</span>
+               <span class="scoreValue" id="avgScoreOut">—</span>
+             </div>
+             <div class="scorePill">
+               <span class="scoreLabel">Last</span>
+               <span class="scoreValue" id="lastScoreOut">—</span>
+             </div>
+             <div class="scorePill">
+               <span class="scoreLabel">Rounds</span>
+               <span class="scoreValue" id="roundsOut">0</span>
+             </div>
+             <div class="scorePill">
+               <span class="scoreLabel">Avg ms accuracy</span>
+               <span class="scoreValue" id="avgMsOut">—</span>
+             </div>
+           </div>
+         </section>
+     
+         <section aria-label="drum pads" class="padsPanel">
+           <div class="padsRow">
+             <button class="padBtn kickPad" disabled="" id="kickBtn" type="button">
+               <img alt="" class="padIcon" src="images/kick.png"/>
+               <span class="padText">Kick</span>
+               <span class="padKey">⬅️</span>
+             </button>
+     
+             <button class="padBtn snarePad" disabled="" id="snareBtn" type="button">
+               <img alt="" class="padIcon" src="images/snare.png"/>
+               <span class="padText">Snare</span>
+               <span class="padKey">➡️</span>
+             </button>
+           </div>
+         </section>
+     
+         <section aria-label="feedback" class="analysis">
+           <div class="analysisGrid">
+             <div class="analysisCard fixedFeedbackCard" id="feedbackCard">
+               <div class="analysisLabel">Feedback</div>
+               <div aria-live="polite" class="analysisBody" id="feedbackOut">
+                 Press <strong>Begin Game</strong> to start.
+               </div>
+     
+               <!-- kept in DOM for compatibility, but visually hidden in CSS -->
+               <div aria-hidden="true" class="scoreBarWrap">
+                 <div class="scoreBar" id="scoreBar"></div>
+               </div>
+             </div>
+           </div>
+         </section>
+     
+         <footer class="endnotes"></footer>
+       </div>
+     
+       <!-- Info modal -->
+       <div aria-labelledby="infoTitle" aria-modal="true" class="modal hidden" id="infoModal" role="dialog">
+         <div class="modalCard" role="document">
+           <div class="modalHeader">
+             <h2 id="infoTitle">More information 🧐</h2>
+           </div>
+     
+           <div class="modalBody">
+             <p>In this game your job is to repeat the rhythm. Use the 'Game Settings' menu to change the time signature, complexity, bar length and tempo. You can also toggle on/off rest bars between the rhythm being played, and you playing it back.
+              <br>You can use the Left ⬅️ arrow key for the kick drum, and the Right ➡️ arrow key for the snare.
+             </p>
+           </div>
+     
+           <div class="modalFooter">
+             <button class="primary" id="infoOk" type="button">Got it</button>
+           </div>
+         </div>
+       </div>
+     
+       <!-- Rhythm settings modal -->
+       <div aria-labelledby="rhythmSettingsTitle" aria-modal="true" class="modal hidden" id="rhythmSettingsModal" role="dialog">
+         <div class="modalCard modalCardCompact" role="document">
+           <div class="modalHeader">
+             <h2 id="rhythmSettingsTitle">Settings ⚙️</h2>
+           </div>
+     
+           <div class="modalBody">
+
+            <div class="settingsSection">
+               <div class="settingsLabel">Metronome (BPM)</div>
+               <div class="bpmRow">
+                 <input id="bpmRange" max="140" min="40" type="range" value="70"/>
+                 <input id="bpmNum" max="140" min="40" type="number" value="70"/>
+               </div>
+             </div>
+             
+             <div class="settingsSection">
+               <div class="settingsLabel">Time signature</div>
+               <div class="segmented" role="group" aria-label="Time signature">
+                 <button class="segBtn" type="button" data-ts="4/4" aria-pressed="true">4/4</button>
+                 <button class="segBtn" type="button" data-ts="3/4" aria-pressed="false">3/4</button>
+               </div>
+             </div>
+
+             <select id="timeSigSel" class="compactSelect hidden" aria-label="Time Signature" tabindex="-1" aria-hidden="true">
+               <option value="4/4" selected>Time Signature: 4/4</option>
+               <option value="3/4">Time Signature: 3/4</option>
+             </select>
+     
+             
+             <div class="settingsSection">
+               <div class="settingsLabel">Rhythm length</div>
+               <div class="segmented" role="group" aria-label="Rhythm length">
+                 <button class="segBtn" type="button" data-rl="1" aria-pressed="true">1 bar</button>
+                 <button class="segBtn" type="button" data-rl="2" aria-pressed="false">2 bars</button>
+               </div>
+
+               <select id="rhythmLenSel" class="compactSelect hidden" aria-label="Rhythm length" tabindex="-1" aria-hidden="true">
+                 <option value="1" selected>Rhythm length: 1 bar</option>
+                 <option value="2">Rhythm length: 2 bars</option>
+               </select>
+             </div>
+     
+             
+             <div class="settingsSection">
+               <div class="settingsLabel">In-between bars (rest measures)</div>
+               <div class="segmented" role="group" aria-label="In-between bars">
+                 <button class="segBtn" type="button" data-gaps="1" aria-pressed="true">On</button>
+                 <button class="segBtn" type="button" data-gaps="0" aria-pressed="false">Off</button>
+               </div>
+
+               <label class="toggleRow hidden" for="gapsToggle" aria-hidden="true">
+                 <input id="gapsToggle" type="checkbox" checked />
+                 <span class="toggleText">Toggle</span>
+               </label>
+             </div>
+     
+             <div class="settingsSection">
+               <div class="settingsLabel">Difficulty</div>
+               <div class="diffGrid" id="difficultyOptions" role="list">
+                 <button class="diffOption" data-diff="simple" type="button">Simple</button>
+                 <button class="diffOption" data-diff="medium" type="button">Medium</button>
+                 <button class="diffOption" data-diff="difficult" type="button">Difficult</button>
+                 <button class="diffOption" data-diff="complex" type="button">Complex</button>
+               </div>
+     
+               <select aria-hidden="true" class="compactSelect hidden" id="difficultySel" tabindex="-1">
+                 <option value="simple">Simple</option>
+                 <option value="medium">Medium</option>
+                 <option value="difficult">Difficult</option>
+                 <option value="complex">Complex</option>
+               </select>
+             </div>
+           </div>
+     
+           <div class="modalActions">
+             <button class="primary" id="rhythmSettingsClose" type="button">Close</button>
+           </div>
+         </div>
+       </div>
+     
+       <!-- Summary modal -->
+       <div aria-labelledby="summaryTitle" aria-modal="true" class="modal hidden" id="summaryModal" role="dialog">
+         <div class="modalCard">
+           <div class="modalTitle" id="summaryTitle">Score Summary</div>
+           <div class="modalBody" id="summaryBody">—</div>
+           <div class="modalActions">
+             <button id="summaryDownload" type="button">Download Score PNG</button>
+             <button class="primary" id="summaryClose" type="button">Close</button>
+           </div>
+         </div>
+       </div>
+     
+       <script src="script.js"></script>
+     </body>
+     </html>
+     
