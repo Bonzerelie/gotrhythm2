@@ -308,7 +308,7 @@
     flex-wrap:wrap;
   }
   .padBtn{
-    --padSize: 200px;      /* fixed size */
+    --padSize: 180px;      /* fixed size */
     width: var(--padSize);
     height: var(--padSize);
     flex: 0 0 var(--padSize); /* don't let flexbox shrink it */
