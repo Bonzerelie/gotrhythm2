@@ -48,6 +48,19 @@
   }
   
   .hero{text-align:center;margin:0 0 10px}
+
+  .app-title-img{
+    display:block;
+  margin: 0 auto;     /* centers the image */
+    margin: 20px auto 2px;
+    padding-bottom: 10px;
+  }
+  .app-title-img img{
+    display:block;
+  margin: 0 auto;     /* centers the image */
+    width: max(60%);
+    height:auto;
+  }
   .app-title{margin:10px 0 2px;font-size:46px;font-weight:500;letter-spacing:.5px}
   .app-subtitle-large{margin:0 0 4px;max-width:1020px;font-size:28px;font-weight:400;opacity:.75;line-height:1.2;}
   .app-subtitle{margin:10px auto 0;max-width:1020px;font-size:15px;font-weight:400;opacity:.78;line-height:1.35;}
@@ -61,6 +74,8 @@
   .controlsPanelActions{margin-top:6px}
   
   .hidden{display:none}
+
+  .srOnly{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
   
   select{
     height:38px;
@@ -149,7 +164,7 @@
     width: max-content;
     max-width: min(360px, calc(100vw - 32px));
     padding:10px 12px 10px;
-    max-height: calc(100vh - 40px);
+    max-height: calc(100vh - 130px);
     overflow: auto;
   }
   
@@ -200,7 +215,7 @@
     align-items:center;
     justify-content:center;
     gap:10px;
-    padding: 12px 10px 8px;
+    padding: 6px 10px 8px;
   }
   
   .beatLights{
@@ -293,9 +308,10 @@
     flex-wrap:wrap;
   }
   .padBtn{
-    width: min(220px, calc(50vw - 22px));
-    aspect-ratio: 1 / 1;
-    height: auto;
+    --padSize: 200px;      /* fixed size */
+    width: var(--padSize);
+    height: var(--padSize);
+    flex: 0 0 var(--padSize); /* don't let flexbox shrink it */
     border-radius:16px;
     border:1px solid rgba(0,0,0,.18);
     box-shadow: 0 12px 26px var(--padShadow);
@@ -313,8 +329,8 @@
     box-shadow:none;
   }
   .padIcon{
-    width: 64px;
-    height: 64px;
+    width: min(70%, 180px);
+    height: min(70%, 180px);
     object-fit:contain;
     filter: drop-shadow(0 8px 10px rgba(0,0,0,.15));
   }
@@ -439,11 +455,17 @@
     inset:0;
     background:rgba(0,0,0,.55);
     display:grid;
-    place-items:center;
-    padding: 10px;
+    place-items:start center;
+    padding: 100px 10px 10px;
     z-index:1000;
   }
   .modal.hidden{display:none}
+  .modalTitleImg{display:block;margin:0 auto 0px;max-width:280px; padding: 0px;}
+  .modalTitleImg img{display:block;width:100%;height:auto;padding: 0px;}
+  .introBody{ text-align:center; }
+  .introBody p{ margin: 0px 0; }
+  .introFooter{ display:flex; gap:10px; justify-content:center; flex-wrap:wrap; }
+
   .modalCard{
     text-align:center;
     width:min(720px, calc(100vw - 32px));
@@ -451,15 +473,15 @@
     border-radius:18px;
     border:1px solid rgba(0,0,0,.1);
     padding:16px 16px 14px;
-      max-height: calc(100vh - 40px);
+      max-height: calc(100vh - 130px);
     overflow: auto;
     box-shadow:0 12px 30px rgba(0,0,0,.25);
   }
   .modalTitle{font-size:18px;font-weight:900;margin-bottom:10px}
   .modalBody{font-size:14px;line-height:1.45;opacity:.95;white-space:pre-wrap}
-  .modalActions{margin-top:10px;display:flex;justify-content:flex-end;gap:10px;flex-wrap:wrap}
+  .modalActions{margin-top:10px;display:flex;justify-content:flex-end;gap:10px;flex-wrap:wrap;justify-content: center;}
   .modalHeader h2{ margin:0; }
-  .modalFooter{ margin-top: 8px; display:flex; justify-content:center; }
+  .modalFooter{ margin-top: 0px; display:flex; justify-content:center; }
   
   /* Settings modal sections (Rhythm Length, Difficulty and Tempo) */
   .settingsSection{
@@ -474,6 +496,8 @@
     text-align:center;
   }
   #rhythmSettingsBtn{
+    align-items: center;
+    display: block;
     max-width: 340px;
   }
   #timeSigSel{ margin-bottom: 10px; }
@@ -557,4 +581,69 @@
   .modal{ padding: 6px; }
   .modalCard{ max-height: calc(100vh - 20px); }
   .modalCardCompact{ max-height: calc(100vh - 20px); }
+}
+
+/* Info modal: don't render HTML indentation/newlines as spacing */
+#infoModal .modalBody{
+  white-space: normal;   /* overrides .modalBody { white-space:pre-wrap } */
+}
+
+#introModal .modalBody{
+  white-space: normal;   /* overrides .modalBody { white-space:pre-wrap } */
+}
+
+#gapsToggle,
+label[for="gapsToggle"]{
+  display: none !important;
+}
+
+/* Keep the pad button itself fixed */
+.padBtn{
+  max-width: none;
+  min-width: var(--padSize);
+  width: var(--padSize);
+  height: var(--padSize);
+  flex: 0 0 var(--padSize);
+  flex-shrink: 0;
+
+  /* Make inner layout stable */
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;          /* space between image + label */
+  padding: 12px;      /* controls inner padding */
+  box-sizing: border-box;
+}
+
+/* Ensure the image scales *within* the fixed square */
+.padBtn img,
+.padBtn .padIcon{
+  display: block;
+  max-width: 100%;
+  max-height: 100%;
+  width: auto;
+  height: auto;
+
+  /* If you want it to fill the available area more aggressively: */
+  /* width: 100%;
+  height: 100%;
+  object-fit: contain; */
+}
+
+/* Keep the key text from forcing width changes */
+.padBtn .padKey,
+.padBtn .padLabel,
+.padBtn span{
+  max-width: 100%;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  flex: 0 0 auto;
+}
+
+/* If you want the image to take most of the button and text stay small */
+.padBtn .padIcon{
+  flex: 1 1 auto;     /* image area grows */
+  min-height: 0;      /* prevents flex overflow */
 }

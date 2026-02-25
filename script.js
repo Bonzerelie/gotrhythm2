@@ -29,6 +29,9 @@
   
     const METRONOME_GAIN = 0.55;
     const DRUM_GAIN = 0.95;
+
+
+    const UI_GAIN = 0.85;
   
     // Prevent "click" after touch/pointer from double-firing
     const GHOST_CLICK_BLOCK_MS = 700;
@@ -82,6 +85,10 @@
     const infoBtn = $("infoBtn");
     const infoModal = $("infoModal");
     const infoOk = $("infoOk");
+
+    const introModal = $("introModal");
+    const introGotIt = $("introGotIt");
+    const introSettings = $("introSettings");
   
     const summaryModal = $("summaryModal");
     const summaryBody = $("summaryBody");
@@ -209,7 +216,6 @@
     }
   
     window.addEventListener("load", () => {
-      postHeightNow();
       setTimeout(postHeightNow, 250);
       setTimeout(postHeightNow, 1000);
     });
@@ -219,101 +225,7 @@
       setTimeout(postHeightNow, 500);
     });
   
-    function enableScrollForwardingToParent() {
-      const SCROLL_GAIN = 6.0;
-  
-      const isVerticallyScrollable = () =>
-        document.documentElement.scrollHeight > window.innerHeight + 2;
-  
-      const isInteractiveTarget = (t) =>
-        t instanceof Element && !!t.closest("button, a, input, select, textarea, label");
-  
-      let startX = 0;
-      let startY = 0;
-      let lastY = 0;
-      let lockedMode = null;
-  
-      let lastMoveTs = 0;
-      let vScrollTop = 0;
-  
-      window.addEventListener(
-        "touchstart",
-        (e) => {
-          if (!e.touches || e.touches.length !== 1) return;
-          const t = e.target;
-  
-          lockedMode = null;
-          startX = e.touches[0].clientX;
-          startY = e.touches[0].clientY;
-          lastY = startY;
-  
-          lastMoveTs = e.timeStamp || performance.now();
-          vScrollTop = 0;
-  
-          if (isInteractiveTarget(t)) lockedMode = "x";
-        },
-        { passive: true }
-      );
-  
-      window.addEventListener(
-        "touchmove",
-        (e) => {
-          if (!e.touches || e.touches.length !== 1) return;
-          if (isVerticallyScrollable()) return;
-  
-          const x = e.touches[0].clientX;
-          const y = e.touches[0].clientY;
-  
-          const dx = x - startX;
-          const dy = y - startY;
-  
-          if (!lockedMode) {
-            if (Math.abs(dy) > Math.abs(dx) + 4) lockedMode = "y";
-            else if (Math.abs(dx) > Math.abs(dy) + 4) lockedMode = "x";
-            else return;
-          }
-          if (lockedMode !== "y") return;
-  
-          const nowTs = e.timeStamp || performance.now();
-          const dt = Math.max(8, nowTs - lastMoveTs);
-          lastMoveTs = nowTs;
-  
-          const fingerStep = (y - lastY) * SCROLL_GAIN;
-          lastY = y;
-  
-          const scrollTopDelta = -fingerStep;
-          const instV = scrollTopDelta / dt;
-          vScrollTop = vScrollTop * 0.75 + instV * 0.25;
-  
-          e.preventDefault();
-          parent.postMessage({ scrollTopDelta }, "*");
-        },
-        { passive: false }
-      );
-  
-      function endGesture() {
-        if (lockedMode === "y" && Math.abs(vScrollTop) > 0.05) {
-          const capped = Math.max(-5.5, Math.min(5.5, vScrollTop));
-          parent.postMessage({ scrollTopVelocity: capped }, "*");
-        }
-        lockedMode = null;
-        vScrollTop = 0;
-      }
-  
-      window.addEventListener("touchend", endGesture, { passive: true });
-      window.addEventListener("touchcancel", endGesture, { passive: true });
-  
-      window.addEventListener(
-        "wheel",
-        (e) => {
-          if (isVerticallyScrollable()) return;
-          parent.postMessage({ scrollTopDelta: e.deltaY }, "*");
-        },
-        { passive: true }
-      );
-    }
-    enableScrollForwardingToParent();
-  
+    
     // ---------------- Audio ----------------
     let audioCtx = null;
     let masterGain = null;
@@ -423,19 +335,27 @@
   
     let metroHighBuf = null;
     let metroLowBuf = null;
+
+
+    let selectBuf = null;
+    let backBuf = null;
   
     async function preloadAudio() {
       await resumeAudioIfNeeded();
-      const [k, s, mh, ml] = await Promise.all([
+      const [k, s, mh, ml, sel, back] = await Promise.all([
         loadBuffer(urlFor("kick1.mp3")),
         loadBuffer(urlFor("snare1.mp3")),
         loadBuffer(urlFor("metronomehigh.mp3")),
         loadBuffer(urlFor("metronomelow.mp3")),
+        loadBuffer(urlFor("select1.mp3")),
+        loadBuffer(urlFor("back1.mp3")),
       ]);
       kickBuf = k;
       snareBuf = s;
       metroHighBuf = mh;
       metroLowBuf = ml;
+      selectBuf = sel;
+      backBuf = back;
     }
   
     // ---------------- Game model ----------------
@@ -565,7 +485,6 @@
   
     function setFeedback(html) {
       feedbackOut.innerHTML = html || "";
-      postHeightNow();
     }
   
     function setPhase(title, sub) {
@@ -617,7 +536,6 @@
         if (i < count) d.dataset.color = dotColorForIndex(i, ph);
         d.classList.remove("on");
       });
-      postHeightNow();
     }
   
     function computeDotIndexForBeat(beatIdx, phForBeat = phase) {
@@ -1113,6 +1031,33 @@
       if (!buf) return;
       playOneShot(buf, whenSec, DRUM_GAIN);
     }
+
+
+    async function ensureUiBuffers() {
+      // Lazy-load UI sounds so they work before the game begins.
+      await resumeAudioIfNeeded();
+      if (selectBuf && backBuf) return;
+      const [sel, back] = await Promise.all([
+        selectBuf ? Promise.resolve(selectBuf) : loadBuffer(urlFor("select1.mp3")),
+        backBuf ? Promise.resolve(backBuf) : loadBuffer(urlFor("back1.mp3")),
+      ]);
+      if (!selectBuf) selectBuf = sel;
+      if (!backBuf) backBuf = back;
+    }
+
+    async function playUiSelect() {
+      await ensureUiBuffers();
+      const ctx = ensureAudio();
+      if (!ctx || !selectBuf) return;
+      playOneShot(selectBuf, ctx.currentTime + 0.01, UI_GAIN);
+    }
+
+    async function playUiBack() {
+      await ensureUiBuffers();
+      const ctx = ensureAudio();
+      if (!ctx || !backBuf) return;
+      playOneShot(backBuf, ctx.currentTime + 0.01, UI_GAIN);
+    }
   
     let countInAnchorBeat = 0;
 
@@ -1505,9 +1450,30 @@ function registerHit(i) {
         registerHit(instrument);
       });
     }
+
+    function returnToStartScreen() {
+      // 1) stop running stuff
+      stopMetronome?.();
+      stopPlayback?.();
+      clearAllTimers?.(); // if you have one
+    
+      // 2) reset state
+      resetGameState?.(); // or resetGame(), whichever you have
+    
+      // 3) close other modals (optional, but nice)
+      closeModal?.("settingsModal");
+      closeModal?.("infoModal");
+    
+      // 4) show intro
+      openModal("introModal");
+    
+      // 5) ensure the game doesn't instantly resume
+      setPaused?.(true); // only if your game uses pause state
+    }
   
     // ---------------- Modals ----------------
-    function showInfo() {
+    async function showInfo() {
+      await playUiSelect();
       infoModal?.classList.remove("hidden");
     }
     function hideInfo() {
@@ -1518,6 +1484,37 @@ function registerHit(i) {
     infoOk?.addEventListener("click", hideInfo);
     infoModal?.addEventListener("click", (e) => {
       if (e.target === infoModal) hideInfo();
+    });
+
+
+    // Intro modal (start screen)
+    function showIntro() {
+      introModal?.classList.remove("hidden");
+      introGotIt?.focus?.();
+      postHeightNow();
+    }
+    function hideIntro() {
+      introModal?.classList.add("hidden");
+      beginBtn?.focus?.();
+      postHeightNow();
+    }
+
+    introGotIt?.addEventListener("click", () => {
+      hideIntro();
+    });
+
+    introSettings?.addEventListener("click", async () => {
+      hideIntro();
+      await openRhythmSettings();
+    });
+
+    introModal?.addEventListener("click", (e) => {
+      if (e.target === introModal) hideIntro();
+    });
+
+    window.addEventListener("load", () => {
+      // Show the start screen once the layout is stable.
+      setTimeout(showIntro, 80);
     });
   
 
@@ -1585,10 +1582,11 @@ async function openRhythmSettings() {
     await pauseGame("settings");
   }
 
+  await playUiSelect();
+
   updateRhythmSettingsCloseLabel();
   rhythmSettingsModal.classList.remove("hidden");
   rhythmSettingsClose.focus();
-  postHeightNow();
 }
 
 async function cancelRhythmSettings() {
@@ -1600,7 +1598,6 @@ async function cancelRhythmSettings() {
   updateRhythmSettingsCloseLabel();
 
   rhythmSettingsModal.classList.add("hidden");
-  postHeightNow();
 
   const shouldResume = settingsModalPausedByUs && !settingsModalWasPaused;
 
@@ -1616,7 +1613,6 @@ async function commitRhythmSettings() {
   const dirty = updateRhythmSettingsCloseLabel();
 
   rhythmSettingsModal.classList.add("hidden");
-  postHeightNow();
 
   const wasStarted = settingsModalWasStarted;
   const wasPaused = settingsModalWasPaused;
@@ -1631,6 +1627,7 @@ async function commitRhythmSettings() {
     if (pausedByUs && !wasPaused) await resumeGame();
     return;
   }
+
 
   saveSettings();
   syncSettingsButtonA11y();
@@ -1890,12 +1887,11 @@ rhythmSettingsModal.addEventListener("click", (e) => {
   
       beginBtn.hidden = false;
       beginBtn.textContent = "Begin Game";
-      pauseBtn.textContent = "Pause";
+      pauseBtn.textContent = "Pause (Space)";
       beginBtn.classList.add("pulse");
   
       syncBeatDotsUI(PHASE.COUNTIN);
       setControls();
-      postHeightNow();
     }
   
     async function beginGame() {
@@ -1988,6 +1984,12 @@ async function pauseGame(reason = "user") {
 
   setControls();
 
+  if (reason === "settings") {
+    // Don't suspend the AudioContext here; it can delay UI sounds.
+    stopAllAudio(0.03);
+    return;
+  }
+
   try { if (ctx) await ctx.suspend(); } catch {}
 }
 
@@ -1998,7 +2000,7 @@ async function resumeGame() {
   try { if (ctx) await ctx.resume(); } catch {}
 
   paused = false;
-  pauseBtn.textContent = "Pause";
+  pauseBtn.textContent = "Pause (Space)";
   setControls();
 
   if (ctx) nextBeatTimeSec = Math.max(nextBeatTimeSec, ctx.currentTime + 0.02);
@@ -2031,8 +2033,9 @@ async function togglePause() {
     }
   
     function stopAndReset() {
-      if (scoreState.rounds > 0) showSummary();
-      hardResetState();
+      playUiBack();
+hardResetState();
+      showIntro();
     }
   
     // ---------------- Events ----------------
@@ -2099,7 +2102,6 @@ async function togglePause() {
     syncSettingsButtonA11y();
     syncSettingsButtonsUI();
     updateRhythmSettingsCloseLabel();
-    postHeightNow();
     return;
   }
   saveSettings();
@@ -2107,7 +2109,6 @@ async function togglePause() {
   syncSettingsButtonA11y();
   syncSettingsButtonsUI();
   setFeedback("Time signature updated — restarting game to apply it.");
-  postHeightNow();
   if (started) await restartGame();
   else {
     hardResetState();
@@ -2120,7 +2121,6 @@ async function togglePause() {
     syncSettingsButtonA11y();
     syncSettingsButtonsUI();
     updateRhythmSettingsCloseLabel();
-    postHeightNow();
     return;
   }
   saveSettings();
@@ -2128,7 +2128,6 @@ async function togglePause() {
   syncSettingsButtonA11y();
   syncSettingsButtonsUI();
   setFeedback("Rhythm length updated — restarting game to apply it.");
-  postHeightNow();
   if (started) await restartGame();
   else {
     hardResetState();
@@ -2141,7 +2140,6 @@ async function togglePause() {
     syncSettingsButtonA11y();
     syncSettingsButtonsUI();
     updateRhythmSettingsCloseLabel();
-    postHeightNow();
     return;
   }
   saveSettings();
@@ -2149,7 +2147,6 @@ async function togglePause() {
   syncSettingsButtonA11y();
   syncSettingsButtonsUI();
   setFeedback("In-between bars updated — restarting game to apply it.");
-  postHeightNow();
   if (started) await restartGame();
   else {
     hardResetState();
@@ -2161,7 +2158,6 @@ async function togglePause() {
   syncSettingsButtonA11y();
   syncSettingsButtonsUI();
   updateRhythmSettingsCloseLabel();
-  postHeightNow();
   if (!isRhythmSettingsOpen()) {
     setFeedback("Difficulty updated — it will apply from the next round.");
   }

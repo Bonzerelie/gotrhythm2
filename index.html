@@ -13,17 +13,16 @@
      <body>
        <div class="app">
          <header class="hero">
-           <h1 class="app-title">Got Rhythm?</h1>
-           <p class="app-subtitle">
-             The game plays a rhythm, then you repeat it using <strong>Kick</strong> (⬅️) and <strong>Snare</strong> (➡️).<br/>
-             Change time signature, rhythm complexity, bar length, tempo and toggle rest measures in Game Settings.
-           </p>
+           <picture class="app-title-img" aria-label="Got Rhythm">
+             <source media="(max-width: 799px)" srcset="images/titlewrapped.png"/>
+             <img alt="Got Rhythm" src="images/title.png"/>
+           </picture>
          </header>
      
          <section aria-label="game controls" class="controlsPanel controlsPanelActions">
            <div class="actionsRow actionsCentered wrapTight">
              <button class="primary pulse" id="beginBtn" type="button">Begin Game</button>
-             <button disabled="" id="pauseBtn" type="button">Pause</button>
+             <button disabled="" id="pauseBtn" type="button">Pause (Space)</button>
              <button disabled="" id="stopBtn" type="button">Stop / Reset</button>
      
              <button id="rhythmSettingsBtn" type="button">Game Settings</button>
@@ -76,14 +75,12 @@
            <div class="padsRow">
              <button class="padBtn kickPad" disabled="" id="kickBtn" type="button">
                <img alt="" class="padIcon" src="images/kick.png"/>
-               <span class="padText">Kick</span>
-               <span class="padKey">⬅️</span>
+               <span class="padKey">Left Arrow ⬅️</span>
              </button>
      
              <button class="padBtn snarePad" disabled="" id="snareBtn" type="button">
                <img alt="" class="padIcon" src="images/snare.png"/>
-               <span class="padText">Snare</span>
-               <span class="padKey">➡️</span>
+               <span class="padKey">Right Arrow ➡️</span>
              </button>
            </div>
          </section>
@@ -107,19 +104,58 @@
          <footer class="endnotes"></footer>
        </div>
      
-       <!-- Info modal -->
+ 
+      <!-- Intro modal (start screen) -->
+      <div aria-labelledby="introTitle" aria-modal="true" class="modal hidden" id="introModal" role="dialog">
+        <div class="modalCard" role="document">
+          <div class="modalHeader">
+            <h2 id="introTitle" class="srOnly">Welcome</h2>
+            <img class="modalTitleImg" src="images/title.png" alt="Got Rhythm?!" />
+            </picture>
+          </div>
+
+          <div class="modalBody introBody">
+            <br><p><strong>Welcome to Got Rhythm?!</strong>
+              <br>
+            <br><strong>Controls:</strong> Left Key - Kick, Right Key - Snare, Spacebar - Pause</p>
+              <br>In this game you'll be played a rhythm, and then have to play it back. The rhythms will be played on two elements of a standard drum kit - the kick drum (bass drum, a thumb sound) and the snare drum (a higher pitched hit sound). You can play the rhythm back using touchscreen, or if on desktop via the left and right arrow keys - left for the kick drum, and right for the snare.
+              <br>
+              <br>There are a whole load of game settings you can adjust, such as the tempo, complexity of rhythm, time signature and also whether to include rest bars between the game playing you a rhythm, and you having to play it back.
+            
+              You will get a score based on how accurately you can repeat the rhythms, and you can download a scorecard should you want!
+            <br>
+            </p>
+            <br>
+          </div>
+
+          <div class="modalFooter introFooter">
+            <button class="primary" id="introGotIt" type="button">Got It!</button>
+            <button id="introSettings" type="button">Game Settings</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Info modal -->
        <div aria-labelledby="infoTitle" aria-modal="true" class="modal hidden" id="infoModal" role="dialog">
          <div class="modalCard" role="document">
            <div class="modalHeader">
-             <h2 id="infoTitle">More information 🧐</h2>
            </div>
-     
-           <div class="modalBody">
-             <p>In this game your job is to repeat the rhythm. Use the 'Game Settings' menu to change the time signature, complexity, bar length and tempo. You can also toggle on/off rest bars between the rhythm being played, and you playing it back.
-              <br>You can use the Left ⬅️ arrow key for the kick drum, and the Right ➡️ arrow key for the snare.
-             </p>
+           <div class="modalBody introBody">
+            <img class="modalTitleImg" src="images/title.png" alt="Got Rhythm?!" />
+             </picture>
+             <br>
+             <p><strong>Information And Instructions</strong>
+              <br>
+              <br><strong>Controls:</strong> Left Key - Kick, Right Key - Snare, Spacebar - Pause</p>
+                <br>In this game you'll be played a rhythm, and then have to play it back. The rhythms will be played on two elements of a standard drum kit - the kick drum (bass drum, a thumb sound) and the snare drum (a higher pitched hit sound). You can play the rhythm back using touchscreen, or if on desktop via the left and right arrow keys - left for the kick drum, and right for the snare.
+                <br>
+                <br>There are a whole load of game settings you can adjust, such as the tempo, complexity of rhythm, time signature and also whether to include rest bars between the game playing you a rhythm, and you having to play it back.
+              
+                You will get a score based on how accurately you can repeat the rhythms, and you can download a scorecard should you want!
+              </p>
+              <br>
            </div>
-     
+
            <div class="modalFooter">
              <button class="primary" id="infoOk" type="button">Got it</button>
            </div>
