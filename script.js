@@ -2012,6 +2012,8 @@ async function togglePause() {
   if (paused) await resumeGame();
   else await pauseGame("user");
 }
+    let returnToIntroAfterSummary = false;
+
     function showSummary() {
       lastScorecardSnapshot = makeScorecardSnapshot();
       const snap = lastScorecardSnapshot;
@@ -2030,11 +2032,23 @@ async function togglePause() {
   
     function hideSummary() {
       summaryModal.classList.add("hidden");
+      if (returnToIntroAfterSummary) {
+        returnToIntroAfterSummary = false;
+        showIntro();
+      }
     }
   
     function stopAndReset() {
       playUiBack();
-hardResetState();
+
+      if (scoreState.rounds > 0) {
+        returnToIntroAfterSummary = true;
+        showSummary();
+        hardResetState();
+        return;
+      }
+
+      hardResetState();
       showIntro();
     }
   
